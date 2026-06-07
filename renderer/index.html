@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>番茄钟</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 自定义标题栏 -->
+  <div class="titlebar" id="titlebar">
+    <div class="titlebar-drag">
+      <span class="titlebar-icon">🍅</span>
+      <span class="titlebar-title">番茄钟</span>
+    </div>
+    <div class="titlebar-controls">
+      <button class="titlebar-btn" id="btn-pin" title="窗口置顶">📌</button>
+      <button class="titlebar-btn" id="btn-theme" title="切换主题">🌙</button>
+      <button class="titlebar-btn" id="btn-minimize" title="最小化">─</button>
+      <button class="titlebar-btn" id="btn-close" title="关闭">✕</button>
+    </div>
+  </div>
+
+  <!-- 主内容区 -->
+  <div class="container">
+    <!-- 进度环 -->
+    <div class="progress-ring-container">
+      <svg class="progress-ring" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="gradient-focus" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#ff6b6b;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#ee5a24;stop-opacity:1" />
+          </linearGradient>
+          <linearGradient id="gradient-break" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#51cf66;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#2b8a3e;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <circle class="progress-ring-bg" cx="100" cy="100" r="85" />
+        <circle class="progress-ring-circle" id="progress-circle" cx="100" cy="100" r="85" />
+      </svg>
+      <div class="timer-content">
+        <div class="timer-text" id="timer-text">25:00</div>
+        <div class="timer-label" id="timer-label">专注时间</div>
+      </div>
+    </div>
+
+    <!-- 控制按钮 -->
+    <div class="controls">
+      <button class="control-btn btn-primary" id="btn-start" title="开始">
+        <span class="btn-icon">▶</span>
+      </button>
+      <button class="control-btn" id="btn-pause" title="暂停" disabled>
+        <span class="btn-icon">⏸</span>
+      </button>
+      <button class="control-btn" id="btn-reset" title="重置">
+        <span class="btn-icon">↺</span>
+      </button>
+      <button class="control-btn" id="btn-skip" title="跳过">
+        <span class="btn-icon">⏭</span>
+      </button>
+    </div>
+
+    <!-- 番茄计数 -->
+    <div class="tomato-counter" id="tomato-counter">
+      <span class="tomato completed">🍅</span>
+      <span class="tomato">🍅</span>
+      <span class="tomato">🍅</span>
+      <span class="tomato">🍅</span>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍅 番茄钟</title>
+<style>
+/* ===== CSS Variables ===== */
+:root {
+  --bg: #1a1a2e;
+  --bg-card: #16213e;
+  --text: #e0e0e0;
+  --text-secondary: #8888aa;
+  --btn-bg: #2a2a4a;
+  --btn-hover: #3a3a5a;
+  --btn-active: #4a4a6a;
+  --border: #2a2a4a;
+  --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --focus-color: #ff6b6b;
+  --break-color: #51cf66;
+}
+[data-theme="light"] {
+  --bg: #f0f0f5;
+  --bg-card: #ffffff;
+  --text: #2a2a3e;
+  --text-secondary: #888899;
+  --btn-bg: #e8e8f0;
+  --btn-hover: #d8d8e2;
+  --btn-active: #c8c8d4;
+  --border: #d8d8e0;
+  --shadow: 0 8px 32px rgba(0,0,0,0.08);
+}
+
+/* ===== Reset ===== */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+/* ===== Base ===== */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ===== Card Container ===== */
+.card {
+  background: var(--bg-card);
+  border-radius: 24px;
+  padding: 40px 36px 32px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  width: 360px;
+  min-width: 320px;
+  transition: background 0.3s, box-shadow 0.3s;
+  position: relative;
+}
+
+/* ===== Top Bar ===== */
+.top-bar {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  display: flex;
+  gap: 6px;
+}
+.top-btn {
+  width: 32px; height: 32px;
+  border: none; border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.top-btn:hover { background: var(--btn-hover); color: var(--text); }
+.btn-pin.active { background: rgba(255,107,107,0.2); color: #ff6b6b; }
+
+/* ===== Progress Ring ===== */
+.ring-container {
+  position: relative; width: 220px; height: 220px;
+  margin-top: 8px;
+}
+.ring-svg {
+  width: 100%; height: 100%;
+  transform: rotate(-90deg);
+}
+.ring-bg {
+  fill: none;
+  stroke: var(--btn-bg);
+  stroke-width: 7;
+  transition: stroke 0.3s;
+}
+.ring-progress {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s ease, stroke 0.3s;
+}
+/* Focus gradient */
+.ring-focus { stroke: url(#grad-focus); }
+.ring-break  { stroke: url(#grad-break);  }
+
+.timer-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+.timer-time {
+  font-size: 50px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+  line-height: 1.1;
+  transition: color 0.3s;
+}
+.timer-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 2px;
+  transition: color 0.3s;
+}
+
+/* ===== Controls ===== */
+.controls {
+  display: flex; gap: 14px; align-items: center;
+}
+.ctrl-btn {
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  border: 2px solid var(--btn-bg);
+  background: var(--btn-bg);
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.ctrl-btn:hover:not(:disabled) {
+  background: var(--btn-hover);
+  border-color: var(--btn-hover);
+  transform: translateY(-2px);
+}
+.ctrl-btn:active:not(:disabled) { transform: translateY(0); }
+.ctrl-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+.btn-start {
+  width: 60px; height: 60px;
+  background: rgba(255,107,107,0.12);
+  border-color: var(--focus-color);
+  color: var(--focus-color);
+}
+.btn-start:hover:not(:disabled) {
+  background: rgba(255,107,107,0.22);
+  box-shadow: 0 0 24px rgba(255,107,107,0.25);
+}
+
+/* ===== Tomato Counter ===== */
+.tomatoes {
+  display: flex; gap: 10px;
+}
+.tomato {
+  font-size: 22px;
+  opacity: 0.2;
+  filter: grayscale(1);
+  transition: all 0.4s;
+}
+.tomato.done {
+  opacity: 1;
+  filter: grayscale(0);
+  animation: tomatoPop 0.4s ease;
+}
+@keyframes tomatoPop {
+  0% { transform: scale(0.7); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+/* ===== Hint ===== */
+.hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.5;
+  letter-spacing: 0.5px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 400px) {
+  .card { width: 100%; padding: 28px 20px 24px; border-radius: 0; }
+  .ring-container { width: 180px; height: 180px; }
+  .timer-time { font-size: 40px; }
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- Top buttons -->
+  <div class="top-bar">
+    <button class="top-btn btn-pin" id="btn-pin" title="画中画模式">📌</button>
+    <button class="top-btn" id="btn-theme" title="切换主题">🌙</button>
+  </div>
+
+  <!-- Progress Ring -->
+  <div class="ring-container">
+    <svg class="ring-svg" viewBox="0 0 220 220">
+      <defs>
+        <linearGradient id="grad-focus" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#ff6b6b;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#ee5a24;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="grad-break" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#51cf66;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#2b8a3e;stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <!-- Background circle: r=95, center=110,110 -->
+      <circle class="ring-bg" cx="110" cy="110" r="95" />
+      <circle class="ring-progress" id="ring" cx="110" cy="110" r="95" />
+    </svg>
+    <div class="timer-center">
+      <div class="timer-time" id="time">25:00</div>
+      <div class="timer-label" id="label">专注时间</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="ctrl-btn btn-start" id="btn-start" title="开始 (空格键)">▶</button>
+    <button class="ctrl-btn" id="btn-pause" title="暂停 (空格键)" disabled>⏸</button>
+    <button class="ctrl-btn" id="btn-reset" title="重置 (R键)">↺</button>
+    <button class="ctrl-btn" id="btn-skip" title="跳过 (S键)">⏭</button>
+  </div>
+
+  <!-- Tomato counter -->
+  <div class="tomatoes" id="tomatoes">
+    <span class="tomato">🍅</span>
+    <span class="tomato">🍅</span>
+    <span class="tomato">🍅</span>
+    <span class="tomato">🍅</span>
+  </div>
+
+  <!-- Hint -->
+  <div class="hint">空格键 开始/暂停 · R 重置 · S 跳过</div>
+
+</div>
+
+<script>
+// ==================== POMODORO TIMER ====================
+
+// Configuration
+const CONFIG = {
+  focus:      { duration: 25 * 60, label: '专注时间' },
+  shortBreak: { duration:  5 * 60, label: '短休息'   },
+  longBreak:  { duration: 15 * 60, label: '长休息'   },
+};
+const SESSIONS_BEFORE_LONG = 4;
+const RING_RADIUS = 95;
+const CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS; // ~596.9
+
+// State
+let state = 'focus';       // 'focus' | 'shortBreak' | 'longBreak'
+let timeLeft = CONFIG.focus.duration;
+let totalDuration = CONFIG.focus.duration;
+let running = false;
+let sessionCount = 0;      // completed focus sessions in this cycle
+let intervalId = null;
+
+// DOM refs
+const $time = document.getElementById('time');
+const $label = document.getElementById('label');
+const $ring = document.getElementById('ring');
+const $btnStart = document.getElementById('btn-start');
+const $btnPause = document.getElementById('btn-pause');
+const $btnReset = document.getElementById('btn-reset');
+const $btnSkip = document.getElementById('btn-skip');
+const $btnTheme = document.getElementById('btn-theme');
+const $btnPin = document.getElementById('btn-pin');
+const $tomatoes = document.getElementById('tomatoes');
+
+// Init ring
+$ring.style.strokeDasharray = CIRCUMFERENCE;
+$ring.style.strokeDashoffset = '0';
+
+// ==================== AUDIO ====================
+function beep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [523.25, 659.25, 783.99].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.25, ctx.currentTime + i * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.35);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.12);
+      osc.stop(ctx.currentTime + i * 0.12 + 0.35);
+    });
+  } catch(e) { /* ignore */ }
+}
+
+// ==================== NOTIFICATIONS ====================
+function notify(title, body) {
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '🍅' });
+  } else if (Notification.permission === 'default') {
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') new Notification(title, { body, icon: '🍅' });
+    });
+  }
+}
+
+// ==================== UI UPDATES ====================
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  return String(m).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+}
+
+function updateTimer() {
+  $time.textContent = formatTime(timeLeft);
+  const offset = CIRCUMFERENCE * (1 - timeLeft / totalDuration);
+  $ring.style.strokeDashoffset = offset;
+}
+
+function updatePhase() {
+  $label.textContent = CONFIG[state].label;
+
+  // Update ring color
+  $ring.classList.remove('ring-focus', 'ring-break');
+  if (state === 'focus') {
+    $ring.classList.add('ring-focus');
+  } else {
+    $ring.classList.add('ring-break');
+  }
+}
+
+function updateTomatoes() {
+  const items = $tomatoes.querySelectorAll('.tomato');
+  items.forEach((t, i) => {
+    t.classList.toggle('done', i < sessionCount);
+  });
+}
+
+function updateButtons() {
+  $btnStart.disabled = running;
+  $btnPause.disabled = !running;
+}
+
+function updateTitle() {
+  const icon = state === 'focus' ? '🍅' : '☕';
+  document.title = `${icon} ${formatTime(timeLeft)} - ${CONFIG[state].label}`;
+}
+
+function refresh() {
+  updateTimer();
+  updatePhase();
+  updateTomatoes();
+  updateButtons();
+  updateTitle();
+}
+
+// ==================== TIMER LOGIC ====================
+function tick() {
+  if (!running) return;
+  if (timeLeft > 0) {
+    timeLeft--;
+    updateTimer();
+    updateTitle();
+  }
+  if (timeLeft <= 0) {
+    complete();
+  }
+}
+
+function start() {
+  if (running) return;
+  running = true;
+  intervalId = setInterval(tick, 1000);
+  refresh();
+}
+
+function pause() {
+  running = false;
+  if (intervalId) { clearInterval(intervalId); intervalId = null; }
+  refresh();
+}
+
+function reset() {
+  const wasRunning = running;
+  running = false;
+  if (intervalId) { clearInterval(intervalId); intervalId = null; }
+  timeLeft = CONFIG[state].duration;
+  totalDuration = timeLeft;
+  refresh();
+  if (wasRunning) start();
+}
+
+function skip() {
+  running = false;
+  if (intervalId) { clearInterval(intervalId); intervalId = null; }
+  complete();
+}
+
+function complete() {
+  running = false;
+  if (intervalId) { clearInterval(intervalId); intervalId = null; }
+
+  beep();
+
+  if (state === 'focus') {
+    sessionCount++;
+    if (sessionCount >= SESSIONS_BEFORE_LONG) {
+      state = 'longBreak';
+      sessionCount = 0;
+      notify('🍅 番茄钟完成！', '太棒了！进入长休息 15 分钟~');
+    } else {
+      state = 'shortBreak';
+      notify('🍅 番茄钟完成！', '休息 5 分钟吧~');
+    }
+    // Animate tomatoes
+    updateTomatoes();
+  } else {
+    state = 'focus';
+    notify('⏰ 休息结束！', '准备开始新的番茄钟！');
+  }
+
+  timeLeft = CONFIG[state].duration;
+  totalDuration = timeLeft;
+  refresh();
+
+  // Auto-start next
+  start();
+}
+
+// ==================== THEME ====================
+function getTheme() {
+  return document.documentElement.getAttribute('data-theme') || 'dark';
+}
+function setTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  $btnTheme.textContent = t === 'dark' ? '🌙' : '☀️';
+  localStorage.setItem('pomodoro-theme', t);
+}
+
+// ==================== EVENT HANDLERS ====================
+$btnStart.addEventListener('click', start);
+$btnPause.addEventListener('click', pause);
+$btnReset.addEventListener('click', reset);
+$btnSkip.addEventListener('click', skip);
+
+$btnTheme.addEventListener('click', () => {
+  setTheme(getTheme() === 'dark' ? 'light' : 'dark');
+});
+
+// Picture-in-Picture (desktop-like always-on-top)
+$btnPin.addEventListener('click', async () => {
+  try {
+    if (document.pictureInPictureElement) {
+      await document.exitPictureInPicture();
+      $btnPin.classList.remove('active');
+    } else {
+      // We need a video element for PiP; create a tiny canvas-based one
+      const canvas = document.createElement('canvas');
+      canvas.width = 160; canvas.height = 120;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--bg').trim() || '#1a1a2e';
+      ctx.fillRect(0, 0, 160, 120);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 28px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(formatTime(timeLeft), 80, 70);
+
+      const stream = canvas.captureStream(1);
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.muted = true;
+      video.play();
+      await video.requestPictureInPicture();
+      $btnPin.classList.add('active');
+
+      video.addEventListener('leavepictureinpicture', () => {
+        $btnPin.classList.remove('active');
+        video.srcObject.getTracks().forEach(t => t.stop());
+        video.remove();
+      });
+    }
+  } catch(e) {
+    // PiP not supported
+    $btnPin.style.opacity = '0.3';
+    $btnPin.title = '画中画不可用';
+  }
+});
+
+// ==================== KEYBOARD ====================
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') {
+    e.preventDefault();
+    running ? pause() : start();
+  } else if (e.code === 'KeyR') {
+    reset();
+  } else if (e.code === 'KeyS') {
+    skip();
+  }
+});
+
+// ==================== INIT ====================
+function init() {
+  const saved = localStorage.getItem('pomodoro-theme') || 'dark';
+  setTheme(saved);
+  timeLeft = CONFIG[state].duration;
+  totalDuration = timeLeft;
+
+  // Request notification permission on first interaction
+  document.addEventListener('click', () => {
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, { once: true });
+
+  refresh();
+}
+init();
+</script>
+</body>
+</html>
